@@ -8,11 +8,13 @@ import {
   type EstimateForecast,
   type LineItem,
   type ProductId,
+  type RateCard,
 } from '@ai-credits/engine';
 import { ZodError } from 'zod';
 import { CURRENT_RATE_CARD, PRODUCT_LABELS, newLineItem } from '../lib/defaults';
 import { saveEstimate } from '../lib/persistence';
 import { ForecastView } from './ForecastView';
+import { CopilotStudioFields, CoworkFields, GitHubCopilotFields, PowerPlatformAiFields } from './ProductFields';
 
 interface Props {
   initial: Estimate;
@@ -170,7 +172,7 @@ export function EstimateBuilder({ initial, isNew, onSaved, onClose }: Props) {
         </header>
         {estimate.lineItems.length === 0 && <p className="muted">Add a product to start forecasting.</p>}
         {estimate.lineItems.map((li) => (
-          <LineItemEditor key={li.id} item={li} onChange={(n) => setLineItem(li.id, n)} onRemove={() => removeLineItem(li.id)} />
+          <LineItemEditor key={li.id} item={li} rateCard={rateCard} onChange={(n) => setLineItem(li.id, n)} onRemove={() => removeLineItem(li.id)} />
         ))}
       </section>
 
@@ -180,11 +182,20 @@ export function EstimateBuilder({ initial, isNew, onSaved, onClose }: Props) {
 }
 
 /**
- * Line-item editor: Cowork gets form fields for its headline inputs; every product keeps
- * the full inputs as JSON (under "Advanced" for Cowork), validated live against the
- * engine's LineItemSchema.
+ * Line-item editor: a form per product, with the full inputs also editable as JSON under
+ * "Advanced" (validated live against the engine's LineItemSchema, kept in sync with the form).
  */
-function LineItemEditor({ item, onChange, onRemove }: { item: LineItem; onChange: (n: LineItem) => void; onRemove: () => void }) {
+function LineItemEditor({
+  item,
+  rateCard,
+  onChange,
+  onRemove,
+}: {
+  item: LineItem;
+  rateCard: RateCard;
+  onChange: (n: LineItem) => void;
+  onRemove: () => void;
+}) {
   const pretty = JSON.stringify(item.inputs, null, 2);
   const [text, setText] = useState(pretty);
   const [error, setError] = useState<string | null>(null);
@@ -223,76 +234,15 @@ function LineItemEditor({ item, onChange, onRemove }: { item: LineItem; onChange
           Remove
         </button>
       </header>
-      {item.product === 'cowork' ? (
-        <>
-          <CoworkFields item={item} onChange={onChange} />
-          <details>
-            <summary className="muted">Advanced (JSON)</summary>
-            {json}
-          </details>
-        </>
-      ) : (
-        json
-      )}
+      {item.product === 'cowork' && <CoworkFields item={item} onChange={onChange} />}
+      {item.product === 'copilotStudio' && <CopilotStudioFields item={item} onChange={onChange} rateCard={rateCard} />}
+      {item.product === 'powerPlatformAi' && <PowerPlatformAiFields item={item} onChange={onChange} />}
+      {item.product === 'githubCopilot' && <GitHubCopilotFields item={item} onChange={onChange} rateCard={rateCard} />}
+      <details>
+        <summary className="muted">Advanced (JSON)</summary>
+        {json}
+      </details>
       {error && <p className="error">{error}</p>}
     </article>
-  );
-}
-
-type CoworkItem = Extract<LineItem, { product: 'cowork' }>;
-
-/** Number input that maps an empty box to `undefined` rather than 0. */
-function num(value: string): number | undefined {
-  if (value.trim() === '') return undefined;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : undefined;
-}
-
-function CoworkFields({ item, onChange }: { item: CoworkItem; onChange: (n: LineItem) => void }) {
-  const i = item.inputs;
-  const set = (patch: Partial<CoworkItem['inputs']>) => {
-    const inputs = { ...i, ...patch };
-    if (inputs.creditsPerTaskOverride === undefined) delete inputs.creditsPerTaskOverride;
-    onChange({ ...item, inputs });
-  };
-  const credits = i.creditsPerTaskOverride;
-  return (
-    <>
-      <div className="grid">
-        <label>
-          Users
-          <input type="number" min={0} step={1} value={i.users} onChange={(e) => set({ users: Math.max(0, Math.round(num(e.target.value) ?? 0)) })} />
-        </label>
-        <label>
-          Tasks per user / month
-          <input type="number" min={0} value={i.tasksPerUserPerMonth} onChange={(e) => set({ tasksPerUserPerMonth: Math.max(0, num(e.target.value) ?? 0) })} />
-        </label>
-        <label>
-          Credits per task
-          <input
-            type="number"
-            min={0}
-            step="any"
-            placeholder="from /cost"
-            value={credits ?? ''}
-            onChange={(e) => {
-              const v = num(e.target.value);
-              set({ creditsPerTaskOverride: v === undefined ? undefined : Math.max(0, v) });
-            }}
-          />
-        </label>
-      </div>
-      {credits === undefined ? (
-        <p className="muted">
-          Cowork has no published per-task credit average. Enter the customer's average from <code>/cost</code> or the Cowork
-          estimator (aka.ms/CustomerCoworkEstimator); until then this line is shown as incomplete.
-        </p>
-      ) : (
-        <p className="muted">
-          {(i.users * i.tasksPerUserPerMonth * credits).toLocaleString()} Copilot Credits / month, billed on the shared Copilot
-          Credits meter.
-        </p>
-      )}
-    </>
   );
 }

@@ -51,7 +51,7 @@ export function ForecastView({ result }: { result: EstimateForecast }) {
         <ul className="warnings">
           {warnings.map((w, i) => (
             <li key={i}>
-              <code>{w.code}</code> {w.message}
+              <span title={w.code}>{w.message}</span>
             </li>
           ))}
         </ul>
