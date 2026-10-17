@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   LineItemSchema,
   forecast,
@@ -180,12 +180,26 @@ export function EstimateBuilder({ initial, isNew, onSaved, onClose }: Props) {
 }
 
 /**
- * Draft editor: label plus the product's inputs as JSON, validated live against the
- * engine's LineItemSchema. Replace with per-product forms once the inputs settle.
+ * Line-item editor: Cowork gets form fields for its headline inputs; every product keeps
+ * the full inputs as JSON (under "Advanced" for Cowork), validated live against the
+ * engine's LineItemSchema.
  */
 function LineItemEditor({ item, onChange, onRemove }: { item: LineItem; onChange: (n: LineItem) => void; onRemove: () => void }) {
-  const [text, setText] = useState(() => JSON.stringify(item.inputs, null, 2));
+  const pretty = JSON.stringify(item.inputs, null, 2);
+  const [text, setText] = useState(pretty);
   const [error, setError] = useState<string | null>(null);
+
+  // Keep the JSON in step when the form fields change it; leave it alone while the
+  // user is typing JSON that already parses to the current inputs.
+  useEffect(() => {
+    try {
+      if (JSON.stringify(JSON.parse(text)) === JSON.stringify(item.inputs)) return;
+    } catch {
+      /* unparseable text: replace it */
+    }
+    setText(pretty);
+    setError(null);
+  }, [pretty]);
 
   function edit(next: string) {
     setText(next);
@@ -198,6 +212,8 @@ function LineItemEditor({ item, onChange, onRemove }: { item: LineItem; onChange
     }
   }
 
+  const json = <textarea spellCheck={false} rows={Math.min(24, text.split('\n').length + 1)} value={text} onChange={(e) => edit(e.target.value)} />;
+
   return (
     <article className="line-item">
       <header className="row">
@@ -207,14 +223,76 @@ function LineItemEditor({ item, onChange, onRemove }: { item: LineItem; onChange
           Remove
         </button>
       </header>
-      <textarea spellCheck={false} rows={Math.min(24, text.split('\n').length + 1)} value={text} onChange={(e) => edit(e.target.value)} />
-      {item.product === 'cowork' && !('creditsPerTaskOverride' in item.inputs) && (
-        <p className="muted">
-          Cowork has no published per-task credit average. Add <code>"creditsPerTaskOverride": &lt;credits per task&gt;</code> using
-          the customer's <code>/cost</code> readings or the Cowork estimator (aka.ms/CustomerCoworkEstimator).
-        </p>
+      {item.product === 'cowork' ? (
+        <>
+          <CoworkFields item={item} onChange={onChange} />
+          <details>
+            <summary className="muted">Advanced (JSON)</summary>
+            {json}
+          </details>
+        </>
+      ) : (
+        json
       )}
       {error && <p className="error">{error}</p>}
     </article>
+  );
+}
+
+type CoworkItem = Extract<LineItem, { product: 'cowork' }>;
+
+/** Number input that maps an empty box to `undefined` rather than 0. */
+function num(value: string): number | undefined {
+  if (value.trim() === '') return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function CoworkFields({ item, onChange }: { item: CoworkItem; onChange: (n: LineItem) => void }) {
+  const i = item.inputs;
+  const set = (patch: Partial<CoworkItem['inputs']>) => {
+    const inputs = { ...i, ...patch };
+    if (inputs.creditsPerTaskOverride === undefined) delete inputs.creditsPerTaskOverride;
+    onChange({ ...item, inputs });
+  };
+  const credits = i.creditsPerTaskOverride;
+  return (
+    <>
+      <div className="grid">
+        <label>
+          Users
+          <input type="number" min={0} step={1} value={i.users} onChange={(e) => set({ users: Math.max(0, Math.round(num(e.target.value) ?? 0)) })} />
+        </label>
+        <label>
+          Tasks per user / month
+          <input type="number" min={0} value={i.tasksPerUserPerMonth} onChange={(e) => set({ tasksPerUserPerMonth: Math.max(0, num(e.target.value) ?? 0) })} />
+        </label>
+        <label>
+          Credits per task
+          <input
+            type="number"
+            min={0}
+            step="any"
+            placeholder="from /cost"
+            value={credits ?? ''}
+            onChange={(e) => {
+              const v = num(e.target.value);
+              set({ creditsPerTaskOverride: v === undefined ? undefined : Math.max(0, v) });
+            }}
+          />
+        </label>
+      </div>
+      {credits === undefined ? (
+        <p className="muted">
+          Cowork has no published per-task credit average. Enter the customer's average from <code>/cost</code> or the Cowork
+          estimator (aka.ms/CustomerCoworkEstimator); until then this line is shown as incomplete.
+        </p>
+      ) : (
+        <p className="muted">
+          {(i.users * i.tasksPerUserPerMonth * credits).toLocaleString()} Copilot Credits / month, billed on the shared Copilot
+          Credits meter.
+        </p>
+      )}
+    </>
   );
 }
