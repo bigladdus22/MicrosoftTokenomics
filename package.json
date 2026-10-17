@@ -1,0 +1,23 @@
+{
+  "name": "ai-credits-calculator",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Customer-facing forecast calculator for Copilot Credits (Cowork, Copilot Studio, Power Platform AI) and GitHub AI Credits. Azure Static Web Apps + Supabase.",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @ai-credits/web",
+    "build:web": "npm run build -w @ai-credits/web",
+    "test": "npm run test -w @ai-credits/engine",
+    "typecheck": "npm run typecheck -w @ai-credits/engine && npm run typecheck -w @ai-credits/web",
+    "validate:rate-card": "tsx scripts/validate-rate-card.ts",
+    "ci": "npm run validate:rate-card && npm run typecheck && npm test && npm run build:web"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "tsx": "^4.19.0"
+  }
+}
