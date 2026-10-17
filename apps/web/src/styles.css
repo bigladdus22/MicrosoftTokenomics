@@ -93,6 +93,16 @@ button:disabled { opacity: 0.6; cursor: default; }
 .warnings { background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: 8px; padding: 8px 8px 8px 28px; }
 .warnings code { font-size: 0.8rem; }
 
+.subcard { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin: 0 0 12px; }
+.small { font-size: 0.85rem; margin: 4px 0 8px; }
+.grow { flex: 1; min-width: 200px; }
+label.inline { flex-direction: row; align-items: center; gap: 8px; color: var(--text); }
+label.inline input { width: auto; }
+input.pct { width: 90px; }
+.mix-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.mix-row select { width: auto; min-width: 200px; }
+details { margin: 8px 0; }
+summary { cursor: pointer; margin-bottom: 8px; }
 .line-item { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; }
 .label-input { flex: 1; min-width: 160px; }
 .badge { font-size: 0.75rem; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 2px 8px; }

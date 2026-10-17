@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   LineItemSchema,
   forecast,
@@ -8,11 +8,13 @@ import {
   type EstimateForecast,
   type LineItem,
   type ProductId,
+  type RateCard,
 } from '@ai-credits/engine';
 import { ZodError } from 'zod';
 import { CURRENT_RATE_CARD, PRODUCT_LABELS, newLineItem } from '../lib/defaults';
 import { saveEstimate } from '../lib/persistence';
 import { ForecastView } from './ForecastView';
+import { CopilotStudioFields, CoworkFields, GitHubCopilotFields, PowerPlatformAiFields } from './ProductFields';
 
 interface Props {
   initial: Estimate;
@@ -170,7 +172,7 @@ export function EstimateBuilder({ initial, isNew, onSaved, onClose }: Props) {
         </header>
         {estimate.lineItems.length === 0 && <p className="muted">Add a product to start forecasting.</p>}
         {estimate.lineItems.map((li) => (
-          <LineItemEditor key={li.id} item={li} onChange={(n) => setLineItem(li.id, n)} onRemove={() => removeLineItem(li.id)} />
+          <LineItemEditor key={li.id} item={li} rateCard={rateCard} onChange={(n) => setLineItem(li.id, n)} onRemove={() => removeLineItem(li.id)} />
         ))}
       </section>
 
@@ -180,12 +182,35 @@ export function EstimateBuilder({ initial, isNew, onSaved, onClose }: Props) {
 }
 
 /**
- * Draft editor: label plus the product's inputs as JSON, validated live against the
- * engine's LineItemSchema. Replace with per-product forms once the inputs settle.
+ * Line-item editor: a form per product, with the full inputs also editable as JSON under
+ * "Advanced" (validated live against the engine's LineItemSchema, kept in sync with the form).
  */
-function LineItemEditor({ item, onChange, onRemove }: { item: LineItem; onChange: (n: LineItem) => void; onRemove: () => void }) {
-  const [text, setText] = useState(() => JSON.stringify(item.inputs, null, 2));
+function LineItemEditor({
+  item,
+  rateCard,
+  onChange,
+  onRemove,
+}: {
+  item: LineItem;
+  rateCard: RateCard;
+  onChange: (n: LineItem) => void;
+  onRemove: () => void;
+}) {
+  const pretty = JSON.stringify(item.inputs, null, 2);
+  const [text, setText] = useState(pretty);
   const [error, setError] = useState<string | null>(null);
+
+  // Keep the JSON in step when the form fields change it; leave it alone while the
+  // user is typing JSON that already parses to the current inputs.
+  useEffect(() => {
+    try {
+      if (JSON.stringify(JSON.parse(text)) === JSON.stringify(item.inputs)) return;
+    } catch {
+      /* unparseable text: replace it */
+    }
+    setText(pretty);
+    setError(null);
+  }, [pretty]);
 
   function edit(next: string) {
     setText(next);
@@ -198,6 +223,8 @@ function LineItemEditor({ item, onChange, onRemove }: { item: LineItem; onChange
     }
   }
 
+  const json = <textarea spellCheck={false} rows={Math.min(24, text.split('\n').length + 1)} value={text} onChange={(e) => edit(e.target.value)} />;
+
   return (
     <article className="line-item">
       <header className="row">
@@ -207,13 +234,14 @@ function LineItemEditor({ item, onChange, onRemove }: { item: LineItem; onChange
           Remove
         </button>
       </header>
-      <textarea spellCheck={false} rows={Math.min(24, text.split('\n').length + 1)} value={text} onChange={(e) => edit(e.target.value)} />
-      {item.product === 'cowork' && !('creditsPerTaskOverride' in item.inputs) && (
-        <p className="muted">
-          Cowork has no published per-task credit average. Add <code>"creditsPerTaskOverride": &lt;credits per task&gt;</code> using
-          the customer's <code>/cost</code> readings or the Cowork estimator (aka.ms/CustomerCoworkEstimator).
-        </p>
-      )}
+      {item.product === 'cowork' && <CoworkFields item={item} onChange={onChange} />}
+      {item.product === 'copilotStudio' && <CopilotStudioFields item={item} onChange={onChange} rateCard={rateCard} />}
+      {item.product === 'powerPlatformAi' && <PowerPlatformAiFields item={item} onChange={onChange} />}
+      {item.product === 'githubCopilot' && <GitHubCopilotFields item={item} onChange={onChange} rateCard={rateCard} />}
+      <details>
+        <summary className="muted">Advanced (JSON)</summary>
+        {json}
+      </details>
       {error && <p className="error">{error}</p>}
     </article>
   );
