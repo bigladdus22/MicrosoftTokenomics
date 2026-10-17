@@ -24,8 +24,7 @@ Hosted on **Azure Static Web Apps** with **Supabase** (Auth + Postgres/RLS) as t
 ├── scripts/validate-rate-card.ts CI gate: schema + version/filename match + lists unpriced fields
 └── .github/workflows/
     ├── ci.yml                    validate → typecheck → test → build web
-    ├── azure-static-web-apps.yml build in Actions, deploy dist/ to SWA, PR previews
-    └── supabase-deploy.yml       supabase db push on migration changes
+    └── azure-static-web-apps.yml build in Actions, deploy dist/ to SWA, PR previews
 ```
 
 ## Run

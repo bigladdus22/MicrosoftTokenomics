@@ -33,10 +33,10 @@ Browser ── Azure Static Web Apps (global edge, TLS, PR previews)
 | Security advisor | No findings after the migrations |
 | RLS check | Simulated two users in a rolled-back transaction: B sees none of A's rows |
 
-New migrations go in `supabase/migrations/`. On merge to `main` they are applied by the
-**Deploy Supabase** workflow (`supabase db push`, secrets `SUPABASE_ACCESS_TOKEN` and
-`SUPABASE_DB_PASSWORD`) and, where it is enabled, by Supabase's GitHub integration
-(Project Settings → Integrations). `db push` skips versions already applied, so both can run.
+New migrations go in `supabase/migrations/`. On merge to `main`, Supabase's GitHub
+integration (Project Settings → Integrations → GitHub) applies them to the project; no
+database password or access token is stored in GitHub. Keep the integration's production
+deploys enabled. To apply by hand instead: `supabase link --project-ref uixmmjcuhnzwuqhawmwn && supabase db push`.
 
 Dashboard settings to change before launch:
 
