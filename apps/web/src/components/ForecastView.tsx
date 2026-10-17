@@ -4,9 +4,18 @@ const fmtUnits = (n: number) => Math.round(n).toLocaleString();
 
 export function ForecastView({ result }: { result: EstimateForecast }) {
   const { pools, totals, warnings } = result;
-  const money = (n: number | null) =>
-    n === null ? 'unpriced' : n.toLocaleString(undefined, { style: 'currency', currency: totals.currency });
   const rec = pools.copilotCredits.recommended;
+  const ccComplete = pools.copilotCredits.unitsComplete;
+  const ghComplete = pools.githubAiCredits.unitsComplete;
+  // Incomplete usage is a lower bound: show it as "≥ n" so it never reads as a real figure.
+  const units = (n: number, complete: boolean) => (complete ? fmtUnits(n) : `≥ ${fmtUnits(n)}`);
+  const incomplete = !ccComplete || !ghComplete;
+  const money = (n: number | null) =>
+    n === null
+      ? incomplete
+        ? 'incomplete'
+        : 'unpriced'
+      : n.toLocaleString(undefined, { style: 'currency', currency: totals.currency });
 
   return (
     <section className="card">
@@ -18,13 +27,19 @@ export function ForecastView({ result }: { result: EstimateForecast }) {
       <div className="tiles">
         <div className="tile">
           <span className="label">Copilot Credits, peak month</span>
-          <strong>{fmtUnits(pools.copilotCredits.peakMonthUnits)}</strong>
-          <span className="muted">{rec ? `Recommended: ${rec.strategy}` : 'No priced purchase option yet'}</span>
+          <strong>{units(pools.copilotCredits.peakMonthUnits, ccComplete)}</strong>
+          <span className="muted">
+            {!ccComplete
+              ? 'Usage incomplete: add the missing rates below'
+              : rec
+                ? `Recommended: ${rec.strategy}`
+                : 'No priced purchase option yet'}
+          </span>
         </div>
         <div className="tile">
           <span className="label">GitHub AI Credits included / month</span>
           <strong>{fmtUnits(pools.githubAiCredits.includedPerMonth)}</strong>
-          <span className="muted">Overage month 1: {fmtUnits(pools.githubAiCredits.overageUnitsByMonth[0] ?? 0)}</span>
+          <span className="muted">Overage month 1: {units(pools.githubAiCredits.overageUnitsByMonth[0] ?? 0, ghComplete)}</span>
         </div>
         <div className="tile">
           <span className="label">Total over horizon</span>
@@ -57,9 +72,9 @@ export function ForecastView({ result }: { result: EstimateForecast }) {
             {totals.byMonth.map((t, i) => (
               <tr key={i}>
                 <td>{i + 1}</td>
-                <td>{fmtUnits(pools.copilotCredits.unitsByMonth[i] ?? 0)}</td>
-                <td>{fmtUnits(pools.githubAiCredits.unitsByMonth[i] ?? 0)}</td>
-                <td>{fmtUnits(pools.githubAiCredits.overageUnitsByMonth[i] ?? 0)}</td>
+                <td>{units(pools.copilotCredits.unitsByMonth[i] ?? 0, ccComplete)}</td>
+                <td>{units(pools.githubAiCredits.unitsByMonth[i] ?? 0, ghComplete)}</td>
+                <td>{units(pools.githubAiCredits.overageUnitsByMonth[i] ?? 0, ghComplete)}</td>
                 <td>{money(t)}</td>
               </tr>
             ))}

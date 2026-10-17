@@ -208,6 +208,12 @@ function LineItemEditor({ item, onChange, onRemove }: { item: LineItem; onChange
         </button>
       </header>
       <textarea spellCheck={false} rows={Math.min(24, text.split('\n').length + 1)} value={text} onChange={(e) => edit(e.target.value)} />
+      {item.product === 'cowork' && !('creditsPerTaskOverride' in item.inputs) && (
+        <p className="muted">
+          Cowork has no published per-task credit average. Add <code>"creditsPerTaskOverride": &lt;credits per task&gt;</code> using
+          the customer's <code>/cost</code> readings or the Cowork estimator (aka.ms/CustomerCoworkEstimator).
+        </p>
+      )}
       {error && <p className="error">{error}</p>}
     </article>
   );

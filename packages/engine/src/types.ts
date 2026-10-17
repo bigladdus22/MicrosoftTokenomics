@@ -237,6 +237,8 @@ export interface PurchaseOption {
 export interface CopilotCreditsPoolForecast {
   meter: 'copilotCredits';
   unitsByMonth: number[];
+  /** False when a line item lacks a rate: units are a lower bound and cost/recommendation are withheld. */
+  unitsComplete: boolean;
   peakMonthUnits: number;
   options: PurchaseOption[];
   recommended: PurchaseOption | null;
@@ -246,6 +248,8 @@ export interface CopilotCreditsPoolForecast {
 export interface GitHubAiCreditsPoolForecast {
   meter: 'githubAiCredits';
   unitsByMonth: number[];
+  /** False when a line item uses a model missing from the rate card: units are a lower bound and totals are withheld. */
+  unitsComplete: boolean;
   includedPerMonth: number;
   overageUnitsByMonth: number[];
   overageCostByMonthUSD: number[];
