@@ -1,0 +1,64 @@
+name: Deploy to Azure Static Web Apps
+
+# Builds apps/web in GitHub Actions (npm workspaces + the engine package need a real
+# monorepo install, which the SWA Oryx builder doesn't do), then uploads dist/ with
+# skip_app_build. Pull requests get a preview environment; closing the PR removes it.
+#
+# Repository settings (Settings → Secrets and variables → Actions):
+#   secret   AZURE_STATIC_WEB_APPS_API_TOKEN_PURPLE_TREE_03DE28A10 — created by Azure when the
+#            SWA was linked to this repo. AZURE_STATIC_WEB_APPS_API_TOKEN is used if set
+#            (e.g. after recreating the SWA with deployment source "Other").
+#   variable VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY — optional; default to the
+#            ai-credits-calculator project below (both public by design; RLS protects data)
+#
+# Until the token secret exists the deploy step is skipped rather than failing.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  build_and_deploy:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:web
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://uixmmjcuhnzwuqhawmwn.supabase.co' }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_MTbjanHLZWmaTFi60mgeiw_6AcoXrI6' }}
+      - name: Deploy
+        uses: Azure/static-web-apps-deploy@v1
+        env:
+          SKIP_DEPLOY_ON_MISSING_SECRETS: true
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN || secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PURPLE_TREE_03DE28A10 }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: apps/web/dist
+          output_location: ''
+          skip_app_build: true
+
+  close_pull_request:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove preview environment
+        uses: Azure/static-web-apps-deploy@v1
+        env:
+          SKIP_DEPLOY_ON_MISSING_SECRETS: true
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN || secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PURPLE_TREE_03DE28A10 }}
+          action: close

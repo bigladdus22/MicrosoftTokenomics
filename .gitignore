@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env*
+!.env.example
+*.log
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
+# Azure Static Web Apps CLI
+.swa/
