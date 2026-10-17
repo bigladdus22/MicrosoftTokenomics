@@ -65,14 +65,20 @@ Rules the engine enforces (each has a test):
 - `null` means "not yet sourced". `npm run validate:rate-card` prints every null so the gaps stay visible.
 - Currency prices are never hard-coded from memory. Microsoft list prices come from the licensing guide / Pricing Calculator and the app labels them "list price".
 
-### Unpriced in 2026.10 (as of 2026-10-17)
+### Rate-card versions
+
+| Version | Change | Source |
+| --- | --- | --- |
+| `2026.10` | Initial card: consumption rates only, no prices | — |
+| `2026.10.1` | `copilotCredits.paygPricePerCredit.USD` = 0.01 (list) | [Learn: pay-as-you-go meters](https://learn.microsoft.com/power-platform/admin/pay-as-you-go-meters#how-do-meters-work) |
+
+### Still unpriced in 2026.10.1 (as of 2026-10-17)
 
 | Field | Where it comes from |
 | --- | --- |
-| `copilotCredits.paygPricePerCredit.USD` | Copilot Credits licensing guide |
-| `copilotCredits.capacityPack.priceUSD` | Copilot Credits licensing guide / Pricing Calculator |
-| `copilotCredits.prePurchaseP3.tiers` | Learn: copilot-credit-p3 |
-| `copilotCredits.consumptionRates.cowork.taskProfiles[*].avgCredits` | Copilot Credits licensing guide (example scenarios) |
+| `copilotCredits.capacityPack.priceUSD` | Copilot Credits licensing guide / Partner Center price list / Pricing Calculator. Not published on Learn. |
+| `copilotCredits.prePurchaseP3.tiers` | Azure portal → Reservations → Copilot Credit Pre-Purchase Plan. Learn shows the tiers only as a screenshot. |
+| `copilotCredits.consumptionRates.cowork.taskProfiles[*].avgCredits` | No fixed figure exists: Learn says per-task credits vary by model, context, runtime and tools. Use `creditsPerTaskOverride` from the customer's `/cost` readings or the Cowork estimator (aka.ms/CustomerCoworkEstimator). |
 | `copilotCredits.consumptionRates.powerPlatformAi.*` | Learn: ai-builder/message-management |
 | `githubAiCredits.plans.*.seatUSD` | github.com/pricing |
 
