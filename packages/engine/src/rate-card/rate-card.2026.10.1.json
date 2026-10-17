@@ -1,0 +1,79 @@
+{
+  "version": "2026.10.1",
+  "effectiveFrom": "2026-10-17",
+  "currencies": {
+    "base": "USD",
+    "GBP": { "rate": null, "source": "customer-entered FX rate or Microsoft price list; never hard-coded" }
+  },
+  "meters": {
+    "copilotCredits": {
+      "paygPricePerCredit": {
+        "USD": 0.01,
+        "source": "https://learn.microsoft.com/power-platform/admin/pay-as-you-go-meters#how-do-meters-work",
+        "verified": "2026-10-17"
+      },
+      "capacityPack": {
+        "creditsPerMonth": 25000,
+        "priceUSD": null,
+        "source": "https://learn.microsoft.com/microsoft-365/copilot/pay-as-you-go/copilot-capacity-packs",
+        "verified": "2026-10-17"
+      },
+      "prePurchaseP3": {
+        "termMonths": 12,
+        "tiers": [],
+        "source": "https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/copilot-credit-p3",
+        "verified": "2026-10-17"
+      },
+      "consumptionRates": {
+        "copilotStudio": {
+          "source": "https://learn.microsoft.com/microsoft-copilot-studio/requirements-messages-management#copilot-credits-billing-rates",
+          "verified": "2026-10-17",
+          "classicAnswer": 1,
+          "generativeAnswer": 2,
+          "agentAction": 5,
+          "tenantGraphGrounding": 10,
+          "flowActionsPer100": 13,
+          "genAiToolsPer1kTokens": { "basic": 0.1, "standard": 1.5, "premium": 10 },
+          "contentProcessingPerPage": 8,
+          "voicePerMinute": { "classic": 10, "genAi": 35, "premium": 75 }
+        },
+        "cowork": {
+          "source": "https://learn.microsoft.com/microsoft-365/copilot/usage-based-billing-copilot-credits-cost",
+          "verified": "2026-10-17",
+          "taskProfiles": [
+            { "id": "light", "avgCredits": null },
+            { "id": "standard", "avgCredits": null },
+            { "id": "heavy", "avgCredits": null }
+          ]
+        },
+        "powerPlatformAi": {
+          "source": "https://learn.microsoft.com/en-us/ai-builder/message-management#copilot-credit-consumption-rates",
+          "verified": "2026-10-17",
+          "promptToolsPer1kTokens": {},
+          "documentProcessingPerPage": null
+        }
+      }
+    },
+    "githubAiCredits": {
+      "source": "https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing",
+      "verified": "2026-10-17",
+      "usdPerCredit": 0.01,
+      "plans": {
+        "business": { "seatUSD": null, "includedCreditsPerUser": 1900 },
+        "enterprise": { "seatUSD": null, "includedCreditsPerUser": 3900 }
+      },
+      "pooledAtBillingEntity": true,
+      "additionalUsageDefault": "enabled",
+      "models": [
+        { "id": "gpt-5-mini", "category": "lightweight", "tier": "default", "perMillionTokensUSD": { "input": 0.25, "cachedInput": 0.025, "cacheWrite": null, "output": 2.0 } },
+        { "id": "gpt-5.4", "category": "versatile", "tier": "default", "perMillionTokensUSD": { "input": 2.5, "cachedInput": 0.25, "cacheWrite": null, "output": 15.0 } },
+        { "id": "gpt-5.5", "category": "powerful", "tier": "default", "perMillionTokensUSD": { "input": 5.0, "cachedInput": 0.5, "cacheWrite": null, "output": 30.0 } },
+        { "id": "gpt-6-sol", "category": "powerful", "tier": "default", "perMillionTokensUSD": { "input": 2.0, "cachedInput": 0.2, "cacheWrite": 2.5, "output": 10.0 } },
+        { "id": "claude-haiku-5.5", "category": "lightweight", "tier": "default", "perMillionTokensUSD": { "input": 0.1, "cachedInput": 0.01, "cacheWrite": 0.125, "output": 0.5 } },
+        { "id": "claude-sonnet-5.5", "category": "versatile", "tier": "default", "perMillionTokensUSD": { "input": 2.0, "cachedInput": 0.1, "cacheWrite": 2.5, "output": 10.0 } },
+        { "id": "claude-opus-5.5", "category": "powerful", "tier": "default", "perMillionTokensUSD": { "input": 4.0, "cachedInput": 0.2, "cacheWrite": 5.0, "output": 20.0 } },
+        { "id": "gemini-3.8-flash", "category": "versatile", "tier": "default", "perMillionTokensUSD": { "input": 0.75, "cachedInput": 0.075, "cacheWrite": null, "output": 3.75 } }
+      ]
+    }
+  }
+}

@@ -5,6 +5,7 @@ import {
   applyGrowth,
   creditsPerSession,
   forecast,
+  getRateCard,
   sessionCostUSD,
   solvePurchaseMix,
   type Assumptions,
@@ -14,6 +15,8 @@ import {
 } from '../src/index.js';
 
 const rc = RATE_CARDS[0]!;
+/** The original 2026.10 card: nothing priced. Kept to pin the "never a silent zero" behaviour. */
+const unpricedRc = getRateCard('2026.10')!;
 
 /** A fully-priced copy of the rate card so cost paths can be tested. Prices are TEST VALUES, not Microsoft list prices. */
 const pricedRc: RateCard = structuredClone(rc);
@@ -204,10 +207,20 @@ describe('growth and monthly expiry', () => {
 
 describe('purchase mix', () => {
   it('cannot price anything on the unpriced published card and says why', () => {
-    const r = solvePurchaseMix([30_000, 30_000], rc, 'auto');
+    const r = solvePurchaseMix([30_000, 30_000], unpricedRc, 'auto');
     expect(r.recommended).toBeNull();
     expect(r.warnings.map((w) => w.code)).toContain('PRICE_MISSING');
     expect(r.warnings.map((w) => w.code)).toContain('P3_TIERS_MISSING');
+  });
+  it('prices PAYG from the 2026.10.1 card while packs and P3 stay unpriced and warned', () => {
+    expect(rc.version).toBe('2026.10.1');
+    const r = solvePurchaseMix([30_000, 30_000], rc, 'auto');
+    expect(r.recommended?.strategy).toBe('payg');
+    expect(r.recommended?.totalUSD).toBeCloseTo(600);
+    const codes = r.warnings.map((w) => w.code);
+    expect(codes).toContain('PRICE_MISSING'); // capacity pack
+    expect(codes).toContain('P3_TIERS_MISSING');
+    expect(r.warnings.some((w) => w.message.includes('PAYG'))).toBe(false);
   });
   it('picks packs when steady usage makes them cheaper than PAYG', () => {
     // 30,000 credits/month: PAYG = $300; 1 pack ($200) + 5,000 overage ($50) = $250
