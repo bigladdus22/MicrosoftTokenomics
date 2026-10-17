@@ -10,6 +10,7 @@ import {
   type EstimateForecast,
   type LineItem,
   type LineItemForecast,
+  type MeterId,
   type RateCard,
   type Warning,
 } from './types.js';
@@ -74,20 +75,34 @@ export function forecast(estimateIn: Estimate, rateCardIn: RateCard): EstimateFo
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map((li) => forecastLineItem(li, estimate, rateCard));
 
+  // A line item that could not be fully costed (missing rate, unknown model) makes its meter's
+  // units a lower bound. Report that and withhold cost, rather than price a partial number.
+  const incomplete = (meter: MeterId) =>
+    lineItems.some((l) => l.meter === meter && l.warnings.some((w) => w.code === 'RATE_MISSING' || w.code === 'MODEL_UNKNOWN'));
+  const incompleteWarning = (meter: MeterId, label: string): Warning => ({
+    scope: 'pool',
+    ref: meter,
+    code: 'RATE_MISSING',
+    message: `${label} usage is incomplete (see the line-item warnings), so its cost and purchase recommendation are withheld rather than shown for a partial total.`,
+  });
+
   const zeros = () => Array.from({ length: H }, () => 0);
   const addInto = (acc: number[], xs: number[]) => xs.forEach((x, i) => (acc[i] = (acc[i] ?? 0) + x));
 
   // --- Copilot Credits pool (Microsoft) ------------------------------------
+  const ccLines = lineItems.filter((l) => l.meter === 'copilotCredits');
   const ccUnits = zeros();
-  lineItems.filter((l) => l.meter === 'copilotCredits').forEach((l) => addInto(ccUnits, l.unitsByMonth));
+  ccLines.forEach((l) => addInto(ccUnits, l.unitsByMonth));
+  const ccComplete = !incomplete('copilotCredits');
   const mix = solvePurchaseMix(ccUnits, rateCard, estimate.assumptions.commitmentPreference);
   const copilotCredits = {
     meter: 'copilotCredits' as const,
     unitsByMonth: ccUnits,
+    unitsComplete: ccComplete,
     peakMonthUnits: Math.max(0, ...ccUnits),
     options: mix.options,
-    recommended: mix.recommended,
-    warnings: mix.warnings,
+    recommended: ccComplete ? mix.recommended : null,
+    warnings: ccComplete ? mix.warnings : [incompleteWarning('copilotCredits', 'Copilot Credits'), ...mix.warnings],
   };
 
   // --- GitHub AI Credits pool --------------------------------------------
@@ -97,7 +112,8 @@ export function forecast(estimateIn: Estimate, rateCardIn: RateCard): EstimateFo
   ghLines.forEach((l) => addInto(ghUnits, l.unitsByMonth));
   const includedPerMonth = ghLines.reduce((a, l) => a + (l.includedUnitsPerMonth ?? 0), 0);
   const anyBlocked = estimate.lineItems.some((li) => li.product === 'githubCopilot' && !li.inputs.additionalUsageAllowed);
-  const ghWarnings: Warning[] = [];
+  const ghComplete = !incomplete('githubAiCredits');
+  const ghWarnings: Warning[] = ghComplete ? [] : [incompleteWarning('githubAiCredits', 'GitHub AI Credits')];
   const overageUnitsByMonth = ghUnits.map((u) => Math.max(0, u - includedPerMonth));
   if (anyBlocked && overageUnitsByMonth.some((o) => o > 0)) {
     ghWarnings.push({
@@ -112,10 +128,11 @@ export function forecast(estimateIn: Estimate, rateCardIn: RateCard): EstimateFo
   const seatCostByMonthUSD: (number | null)[] = Array.from({ length: H }, () =>
     ghLines.reduce<number | null>((a, l) => (a === null || l.fixedCostPerMonthUSD == null ? null : a + l.fixedCostPerMonthUSD), ghLines.length ? 0 : 0),
   );
-  const ghTotalByMonth = seatCostByMonthUSD.map((s, i) => (s === null ? null : s + (overageCostByMonthUSD[i] ?? 0)));
+  const ghTotalByMonth = seatCostByMonthUSD.map((s, i) => (s === null || !ghComplete ? null : s + (overageCostByMonthUSD[i] ?? 0)));
   const githubAiCredits = {
     meter: 'githubAiCredits' as const,
     unitsByMonth: ghUnits,
+    unitsComplete: ghComplete,
     includedPerMonth,
     overageUnitsByMonth,
     overageCostByMonthUSD,
@@ -126,7 +143,7 @@ export function forecast(estimateIn: Estimate, rateCardIn: RateCard): EstimateFo
 
   // --- totals + currency ---------------------------------------------------
   const ccByMonth = copilotCredits.recommended?.costByMonthUSD ?? Array.from({ length: H }, () => null);
-  const hasCc = ccUnits.some((u) => u > 0);
+  const hasCc = ccLines.length > 0;
   const hasGh = ghUnits.some((u) => u > 0) || ghLines.length > 0;
   const currency = estimate.assumptions.currency;
   const fxRate = currency === 'USD' ? 1 : (rateCard.currencies.GBP?.rate ?? null);

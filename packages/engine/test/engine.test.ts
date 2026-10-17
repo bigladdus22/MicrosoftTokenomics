@@ -98,6 +98,40 @@ describe('Cowork', () => {
     expect(f.lineItems[0]!.baseUnits).toBe(0);
     expect(f.warnings.some((w) => w.code === 'RATE_MISSING')).toBe(true);
   });
+  it('withholds pool cost and recommendation instead of pricing an incomplete total at $0', () => {
+    const f = forecast(
+      estimateWith([
+        {
+          id: 'cw',
+          label: 'cowork',
+          sortOrder: 0,
+          product: 'cowork',
+          inputs: { users: 10, tasksPerUserPerMonth: 20, taskProfileMix: { light: 0.5, standard: 0.5, heavy: 0 } },
+        },
+      ]),
+      pricedRc,
+    );
+    expect(f.pools.copilotCredits.unitsComplete).toBe(false);
+    expect(f.pools.copilotCredits.recommended).toBeNull();
+    expect(f.totals.horizon).toBeNull();
+    expect(f.totals.byMonth.every((m) => m === null)).toBe(true);
+  });
+  it('prices the pool once an override completes the usage', () => {
+    const f = forecast(
+      estimateWith([
+        {
+          id: 'cw',
+          label: 'cowork',
+          sortOrder: 0,
+          product: 'cowork',
+          inputs: { users: 10, tasksPerUserPerMonth: 20, taskProfileMix: { light: 1, standard: 0, heavy: 0 }, creditsPerTaskOverride: 30 },
+        },
+      ]),
+      pricedRc,
+    );
+    expect(f.pools.copilotCredits.unitsComplete).toBe(true);
+    expect(f.totals.horizon).not.toBeNull();
+  });
   it('uses creditsPerTaskOverride when supplied', () => {
     const f = forecast(
       estimateWith([
