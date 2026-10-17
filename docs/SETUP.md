@@ -29,21 +29,14 @@ Browser ── Azure Static Web Apps (global edge, TLS, PR previews)
 | Item | State |
 | --- | --- |
 | Project | `ai-credits-calculator`, ref `uixmmjcuhnzwuqhawmwn`, region eu-west-2, org Finance Team |
-| Migrations applied | `calculator_profiles`, `calculator_estimates`, `calculator_policies` |
-| Pending | `calculator_save_estimate`, applied by the **Deploy Supabase** workflow on merge (see below) |
+| Migrations applied | `calculator_profiles`, `calculator_estimates`, `calculator_policies`, `calculator_save_estimate` |
 | Security advisor | No findings after the migrations |
 | RLS check | Simulated two users in a rolled-back transaction: B sees none of A's rows |
 
-`save_estimate` could not be applied through the Supabase MCP connector. Every call
-containing a `DELETE` statement timed out, probably because it waits on a destructive-SQL
-confirmation **(unverified)**. Until it is applied, **saving estimates fails**; listing,
-loading and deleting work. To apply it:
-
-1. Add repo secrets `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` and `SUPABASE_PROJECT_ID` (`uixmmjcuhnzwuqhawmwn`).
-2. Merge to `main`, or run **Deploy Supabase** manually (workflow_dispatch). `supabase db push`
-   skips the three migrations already applied (the file versions match the remote) and applies the fourth.
-   Alternatively, paste `supabase/migrations/20261017181000_calculator_save_estimate.sql` into the SQL editor and then run
-   `supabase migration repair --status applied 20261017181000` so the CLI history stays in step.
+New migrations go in `supabase/migrations/`. On merge to `main` they are applied by the
+**Deploy Supabase** workflow (`supabase db push`, secrets `SUPABASE_ACCESS_TOKEN` and
+`SUPABASE_DB_PASSWORD`) and, where it is enabled, by Supabase's GitHub integration
+(Project Settings → Integrations). `db push` skips versions already applied, so both can run.
 
 Dashboard settings to change before launch:
 
@@ -122,8 +115,8 @@ For a fully local backend, run `supabase start` and point `.env.local` at `http:
 
 | # | Item | Owner |
 | --- | --- | --- |
-| 1 | Apply `save_estimate` (secrets + merge, §1) | You |
-| 2 | Create the SWA resource and set the token/variables (§2) | You |
+| 1 | ~~Apply `save_estimate`~~ done | — |
+| 2 | ~~Create the SWA resource and deploy~~ done | — |
 | 3 | Entra app registration and Supabase Azure provider (§3) | You (needs Entra admin rights) |
 | 4 | Custom SMTP and the Site URL / redirect allow-list in Supabase | You |
 | 5 | Fill the 5 unpriced rate-card fields from the licensing guide (`npm run validate:rate-card` lists them) | Commercial owner |
