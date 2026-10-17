@@ -5,9 +5,11 @@ name: Deploy to Azure Static Web Apps
 # skip_app_build. Pull requests get a preview environment; closing the PR removes it.
 #
 # Repository settings (Settings → Secrets and variables → Actions):
-#   secret   AZURE_STATIC_WEB_APPS_API_TOKEN  — SWA resource → Overview → Manage deployment token
-#   variable VITE_SUPABASE_URL                — https://uixmmjcuhnzwuqhawmwn.supabase.co
-#   variable VITE_SUPABASE_PUBLISHABLE_KEY    — sb_publishable_... (public by design; RLS protects data)
+#   secret   AZURE_STATIC_WEB_APPS_API_TOKEN_PURPLE_TREE_03DE28A10 — created by Azure when the
+#            SWA was linked to this repo. AZURE_STATIC_WEB_APPS_API_TOKEN is used if set
+#            (e.g. after recreating the SWA with deployment source "Other").
+#   variable VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY — optional; default to the
+#            ai-credits-calculator project below (both public by design; RLS protects data)
 #
 # Until the token secret exists the deploy step is skipped rather than failing.
 
@@ -35,14 +37,14 @@ jobs:
       - run: npm ci
       - run: npm run build:web
         env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://uixmmjcuhnzwuqhawmwn.supabase.co' }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_MTbjanHLZWmaTFi60mgeiw_6AcoXrI6' }}
       - name: Deploy
         uses: Azure/static-web-apps-deploy@v1
         env:
           SKIP_DEPLOY_ON_MISSING_SECRETS: true
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN || secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PURPLE_TREE_03DE28A10 }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
           app_location: apps/web/dist
@@ -58,5 +60,5 @@ jobs:
         env:
           SKIP_DEPLOY_ON_MISSING_SECRETS: true
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN || secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PURPLE_TREE_03DE28A10 }}
           action: close

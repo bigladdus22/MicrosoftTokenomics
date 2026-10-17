@@ -73,7 +73,7 @@ Check current Standard pricing in the Azure Pricing Calculator / [SWA pricing pa
 
 | Kind | Name | Value |
 | --- | --- | --- |
-| Secret | `AZURE_STATIC_WEB_APPS_API_TOKEN` | SWA → Overview → *Manage deployment token* |
+| Secret | `AZURE_STATIC_WEB_APPS_API_TOKEN_PURPLE_TREE_03DE28A10` | created automatically when the SWA was linked to GitHub (or set `AZURE_STATIC_WEB_APPS_API_TOKEN` manually) |
 | Variable | `VITE_SUPABASE_URL` | `https://uixmmjcuhnzwuqhawmwn.supabase.co` |
 | Variable | `VITE_SUPABASE_PUBLISHABLE_KEY` | the `sb_publishable_…` key (Supabase → Project Settings → API Keys) |
 
