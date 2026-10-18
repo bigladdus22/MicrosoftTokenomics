@@ -1,7 +1,7 @@
 # Setup: Azure Static Web Apps + Supabase
 
-How the calculator is hosted, and the one-off steps to go live. Facts about Azure and
-Entra carry a footnote to the Microsoft Learn page they were checked against on
+How the calculator is hosted, and the one-off steps to go live. It is an **internal
+tool with a single user** (email + password, no public sign-up). Facts about Azure carry a footnote to the Microsoft Learn page they were checked against on
 2026-10-17. Anything marked **(unverified)** is a working assumption to confirm.
 
 ## Architecture
@@ -11,7 +11,7 @@ Browser ── Azure Static Web Apps (global edge, TLS, PR previews)
    │         serves apps/web/dist (React SPA + the engine, compiled in)
    │
    └── supabase-js ──► Supabase project uixmmjcuhnzwuqhawmwn (eu-west-2, London)
-                        ├─ Auth: email+password  ·  Azure (Entra ID) OAuth
+                        ├─ Auth: email + password, public sign-up off
                         ├─ Postgres + RLS: profiles · estimates · line_items
                         └─ RPC save_estimate (atomic upsert, runs under caller's RLS)
 ```
@@ -44,9 +44,7 @@ Dashboard settings to change before launch:
   Add `https://<swa-host>/**` and `https://*.<region>.azurestaticapps.net/**` (PR previews)
   to the redirect allow-list. The exact preview hostname pattern is **(unverified)**:
   copy it from the first preview deployment.
-- **Auth → SMTP**: configure a custom SMTP sender. Email confirmation is on, and the
-  built-in mailer is rate-limited.
-- **Auth → Providers → Azure**: see §3.
+- **Auth → Sign In / Providers**: turn **off** "Allow new users to sign up" (see §3).
 
 ## 2. Azure Static Web Apps
 
@@ -82,22 +80,18 @@ requires.[^build] Until the token secret exists, the deploy step is skipped rath
 - `globalHeaders`: CSP (only `self` plus `*.supabase.co`), nosniff, referrer policy.[^config]
 - Long-cache hashed `/assets/*`, `no-cache` on `index.html`.
 
-## 3. Sign in with Microsoft (Entra ID → Supabase)
+## 3. Sign-in (single user)
 
-1. Entra admin center → **App registrations → New registration**.[^register]
-   - Supported account types: **Multiple Entra ID tenants**, so customers' work accounts can sign in.[^register]
-   - Redirect URI (platform **Web**): `https://uixmmjcuhnzwuqhawmwn.supabase.co/auth/v1/callback`.
-     Supabase, not the SPA, is the OAuth client.
-2. **Certificates & secrets → New client secret.** Copy the *Value* and diary its expiry.
-3. Supabase → **Auth → Providers → Azure**: enable it, then paste the client ID and secret.
-   Set the Azure Tenant URL to `https://login.microsoftonline.com/organizations/v2.0`
-   (work/school accounts only). Use a tenant-specific URL to lock it to one org.
-4. Recommended by Supabase: add the optional `xms_edov` claim (plus `email`) to the app
-   manifest's `optionalClaims`, so Supabase can tell verified from unverified email
-   domains and refuse account takeover via an unverified domain.
-
-Supabase links an Entra login to an existing email+password account with the same verified
-email **(unverified: check Auth → identity linking settings)**.
+- The app has an email + password sign-in screen only: no sign-up form, no social or Microsoft login.
+- **Turn off public sign-up** in the hosted project: Supabase → **Authentication → Sign In / Providers**
+  → "Allow new users to sign up" off. The app has no sign-up form, but the Auth API would still
+  accept a sign-up call until this is off. `supabase/config.toml` sets the same for local development.
+- **Add or remove users** in Supabase → **Authentication → Users** (Add user → create with
+  password, tick "Auto confirm"). Only users listed there can sign in.
+- **Forgotten password:** reset it from the same Users page (… → Send password recovery, or
+  delete and re-create the user). The app has no self-service reset screen.
+- Every estimate is private to the user who created it (row-level security); a second user
+  would see none of yours.
 
 ## 4. Local development
 
@@ -109,7 +103,6 @@ npm run ci                  # rate card, typecheck, tests, web build
 ```
 
 For a fully local backend, run `supabase start` and point `.env.local` at `http://localhost:54321`.
-`supabase/config.toml` already sets `external_url` to `localhost` because Entra rejects `127.0.0.1` redirects.
 
 ## Open items
 
@@ -117,15 +110,14 @@ For a fully local backend, run `supabase start` and point `.env.local` at `http:
 | --- | --- | --- |
 | 1 | ~~Apply `save_estimate`~~ done | — |
 | 2 | ~~Create the SWA resource and deploy~~ done | — |
-| 3 | Entra app registration and Supabase Azure provider (§3) | You (needs Entra admin rights) |
-| 4 | Custom SMTP and the Site URL / redirect allow-list in Supabase | You |
+| 3 | Turn off public sign-up in the Supabase dashboard (§3) | You |
+| 4 | Site URL / redirect allow-list in Supabase (only matters for password-recovery emails) | You |
 | 5 | Fill the 5 unpriced rate-card fields from the licensing guide (`npm run validate:rate-card` lists them) | Commercial owner |
-| 6 | Replace the JSON line-item editor with per-product forms; add Excel export (SheetJS) | Next build step |
-| 7 | Decide the privacy notice / UK GDPR position for storing customer contact data | You / legal |
+| 6 | ~~Per-product forms~~ done; add Excel export (SheetJS) | Next build step |
+| 7 | Record of processing for customer names you store (internal use; no customer accounts) | You |
 
 [^plans]: Azure Static Web Apps hosting plans — https://learn.microsoft.com/azure/static-web-apps/plans
 [^faq]: Azure Static Web Apps FAQ (changing plans) — https://learn.microsoft.com/azure/static-web-apps/faq
 [^bicep]: Deploy Azure Static Web Apps with Bicep — https://learn.microsoft.com/azure/static-web-apps/publish-bicep ; resource reference https://learn.microsoft.com/azure/templates/microsoft.web/2023-01-01/staticsites
 [^build]: Build configuration for Azure Static Web Apps (skip_app_build, SKIP_DEPLOY_ON_MISSING_SECRETS) — https://learn.microsoft.com/azure/static-web-apps/build-configuration
 [^config]: Configure Azure Static Web Apps (navigationFallback, globalHeaders) — https://learn.microsoft.com/azure/static-web-apps/configuration
-[^register]: Register an application in Microsoft Entra ID — https://learn.microsoft.com/entra/identity-platform/quickstart-register-app

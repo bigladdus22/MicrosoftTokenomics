@@ -2,28 +2,16 @@
 project_id = "uixmmjcuhnzwuqhawmwn"
 
 [api]
-# Azure (Entra ID) rejects 127.0.0.1 as a redirect host; local OAuth needs localhost.
 external_url = "http://localhost:54321"
 
 [auth]
-# Production: replace with the Static Web Apps hostname (or custom domain) in the
-# dashboard (Auth > URL Configuration). These values only drive `supabase start`.
+# Production: set the Site URL to the Static Web Apps hostname in the dashboard
+# (Auth > URL Configuration). These values only drive `supabase start`.
 site_url = "http://localhost:5173"
 additional_redirect_urls = ["http://localhost:5173", "http://localhost:4280"]
-enable_signup = true
+# Internal tool: no public sign-up. Create users in the dashboard (Authentication > Users).
+# The hosted project needs the same switch: Auth > Sign In / Providers > "Allow new users to sign up" off.
+enable_signup = false
 
 [auth.email]
-enable_signup = true
-# Customer self-service: keep confirmations on. Configure custom SMTP before launch;
-# the built-in mailer is rate-limited and not meant for production traffic.
-enable_confirmations = true
-
-# "Sign in with Microsoft". Client ID/secret come from the Entra app registration
-# (docs/SETUP.md §3). Set them as env vars for local dev; set them in the dashboard
-# (Auth > Providers > Azure) for the hosted project.
-[auth.external.azure]
-enabled = true
-client_id = "env(SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID)"
-secret = "env(SUPABASE_AUTH_EXTERNAL_AZURE_SECRET)"
-# Multi-tenant work accounts. Use a tenant-specific URL to restrict to one tenant.
-url = "https://login.microsoftonline.com/organizations/v2.0"
+enable_signup = false

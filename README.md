@@ -1,6 +1,6 @@
 # AI Credits Forecast Calculator
 
-Customer self-service forecast for Microsoft Copilot Credits (Cowork, Copilot Studio, Power Platform AI) and GitHub AI Credits (GitHub Copilot). Design spec: see the "AI Credits Forecast Calculator — Design Spec" doc.
+Internal forecast tool for Microsoft Copilot Credits (Cowork, Copilot Studio, Power Platform AI) and GitHub AI Credits (GitHub Copilot). Design spec: see the "AI Credits Forecast Calculator — Design Spec" doc.
 
 ## Layout
 
@@ -18,7 +18,7 @@ Hosted on **Azure Static Web Apps** with **Supabase** (Auth + Postgres/RLS) as t
 ├── apps/web/                     Vite + React SPA (auth, estimate list, builder, forecast)
 │   └── public/staticwebapp.config.json   SPA fallback + security headers for SWA
 ├── supabase/
-│   ├── config.toml               local CLI config; email + Azure (Entra ID) providers
+│   ├── config.toml               local CLI config; email + password, sign-up off
 │   └── migrations/               profiles, estimates, line_items, owner-only RLS, save_estimate RPC
 ├── infra/main.bicep              Azure Static Web App resource (Free by default)
 ├── scripts/validate-rate-card.ts CI gate: schema + version/filename match + lists unpriced fields
