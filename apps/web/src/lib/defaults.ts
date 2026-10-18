@@ -13,6 +13,27 @@ export const PRODUCT_LABELS: Record<ProductId, string> = {
   githubCopilot: 'GitHub Copilot',
 };
 
+/** One line on the "Add product" picker. */
+export const PRODUCT_BLURBS: Record<ProductId, string> = {
+  cowork: 'Agentic tasks in Microsoft 365, billed per task in Copilot Credits',
+  copilotStudio: 'Custom agents, billed per conversation feature in Copilot Credits',
+  powerPlatformAi: 'AI Builder prompts and document processing in Copilot Credits',
+  githubCopilot: 'Seats with pooled GitHub AI Credits and overage',
+};
+
+/**
+ * Colour follows the product everywhere (form swatch, chart, legend). The three
+ * Copilot Credits products take categorical slots 1-3, validated as a set in both
+ * modes; GitHub is a separate meter and is never stacked with them, so it uses a
+ * neutral swatch. Values live in styles.css as --series-*.
+ */
+export const PRODUCT_COLOR_VAR: Record<ProductId, string> = {
+  cowork: 'var(--series-1)',
+  copilotStudio: 'var(--series-2)',
+  powerPlatformAi: 'var(--series-3)',
+  githubCopilot: 'var(--text-secondary)',
+};
+
 const newId = () => crypto.randomUUID();
 
 export function newEstimate(customerName?: string): Estimate {
