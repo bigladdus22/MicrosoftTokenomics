@@ -13,7 +13,6 @@ type View = { kind: 'list' } | { kind: 'edit'; estimate: Estimate; isNew: boolea
 function Workspace({ session }: { session: Session }) {
   const [view, setView] = useState<View>({ kind: 'list' });
   const [error, setError] = useState<string | null>(null);
-  const organisation = session.user.user_metadata?.organisation as string | undefined;
 
   async function open(id: string) {
     setError(null);
@@ -36,7 +35,7 @@ function Workspace({ session }: { session: Session }) {
       <main>
         {error && <p className="error card">{error}</p>}
         {view.kind === 'list' ? (
-          <EstimateList onOpen={open} onNew={() => setView({ kind: 'edit', estimate: newEstimate(organisation), isNew: true })} />
+          <EstimateList onOpen={open} onNew={() => setView({ kind: 'edit', estimate: newEstimate(), isNew: true })} />
         ) : (
           <EstimateBuilder
             key={view.estimate.id}
