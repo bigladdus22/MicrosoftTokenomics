@@ -26,14 +26,21 @@ function Workspace({ session }: { session: Session }) {
   return (
     <>
       <header className="topbar">
-        <strong>AI Credits Forecast Calculator</strong>
-        <span className="muted">{session.user.email}</span>
-        <button type="button" className="link" onClick={() => supabase.auth.signOut()}>
+        <span className="brand">
+          <i className="brand-mark" aria-hidden="true" />
+          AI Credits Forecast
+        </span>
+        <span className="user">{session.user.email}</span>
+        <button type="button" className="subtle" onClick={() => supabase.auth.signOut()}>
           Sign out
         </button>
       </header>
-      <main>
-        {error && <p className="error card">{error}</p>}
+      <main className="page">
+        {error && (
+          <p className="card error" style={{ marginBottom: 16 }}>
+            {error}
+          </p>
+        )}
         {view.kind === 'list' ? (
           <EstimateList onOpen={open} onNew={() => setView({ kind: 'edit', estimate: newEstimate(), isNew: true })} />
         ) : (

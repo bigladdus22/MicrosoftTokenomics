@@ -88,12 +88,15 @@ export function CoworkFields({ item, onChange }: { item: Item<'cowork'>; onChang
         />
       </div>
       {credits === undefined ? (
-        <p className="muted">
+        <p className="hint warn">
           Cowork has no published per-task credit average. Enter the customer's average from <code>/cost</code> or the Cowork
-          estimator (aka.ms/CustomerCoworkEstimator); until then this line is shown as incomplete.
+          estimator (aka.ms/CustomerCoworkEstimator). Until then this product is left out of the totals.
         </p>
       ) : (
-        <p className="muted">{fmt(i.users * i.tasksPerUserPerMonth * credits)} Copilot Credits / month.</p>
+        <p className="hint">
+          {fmt(i.users)} users × {fmt(i.tasksPerUserPerMonth)} tasks × {credits.toLocaleString()} credits ={' '}
+          <strong>{fmt(i.users * i.tasksPerUserPerMonth * credits)} Copilot Credits / month</strong>
+        </p>
       )}
     </>
   );
@@ -133,7 +136,7 @@ export function CopilotStudioFields({ item, onChange, rateCard }: { item: Item<'
         const perSession = creditsPerSession(a, rateCard);
         return (
           <fieldset key={idx} className="subcard">
-            <div className="row">
+            <div className="row" style={{ alignItems: 'end' }}>
               <label className="grow">
                 Agent name
                 <input value={a.name} onChange={(e) => setAgent(idx, { ...a, name: e.target.value })} />
@@ -157,7 +160,7 @@ export function CopilotStudioFields({ item, onChange, rateCard }: { item: Item<'
                 }}
               />
             </div>
-            <p className="muted small">Per conversation, on average:</p>
+            <div className="subhead">Per conversation, on average</div>
             <div className="grid">
               <NumberField label="Classic answers" value={ps.classicAnswers} onChange={(v) => setPs({ classicAnswers: v ?? 0 })} />
               <NumberField label="Generative answers" value={ps.generativeAnswers} onChange={(v) => setPs({ generativeAnswers: v ?? 0 })} />
@@ -166,7 +169,7 @@ export function CopilotStudioFields({ item, onChange, rateCard }: { item: Item<'
               <NumberField label="Agent flow actions" value={ps.flowActions} onChange={(v) => setPs({ flowActions: v ?? 0 })} />
             </div>
             <details>
-              <summary className="muted">AI tools, documents and voice</summary>
+              <summary>AI tools, documents and voice</summary>
               <div className="grid">
                 <NumberField label="AI tool tokens, basic (thousands)" value={ps.genAiTokensK.basic} onChange={(v) => setPs({ genAiTokensK: { ...ps.genAiTokensK, basic: v ?? 0 } })} />
                 <NumberField label="AI tool tokens, standard (thousands)" value={ps.genAiTokensK.standard} onChange={(v) => setPs({ genAiTokensK: { ...ps.genAiTokensK, standard: v ?? 0 } })} />
@@ -177,16 +180,19 @@ export function CopilotStudioFields({ item, onChange, rateCard }: { item: Item<'
                 <NumberField label="Voice minutes, premium" value={ps.voiceMinutes.premium} onChange={(v) => setPs({ voiceMinutes: { ...ps.voiceMinutes, premium: v ?? 0 } })} />
               </div>
             </details>
-            <p className="muted small">
-              ≈ {perSession.toLocaleString(undefined, { maximumFractionDigits: 2 })} credits per conversation ·{' '}
-              {fmt(perSession * a.sessionsPerMonth)} credits / month before the M365 Copilot-licensed discount
+            <p className="hint">
+              ≈ {perSession.toLocaleString(undefined, { maximumFractionDigits: 2 })} credits per conversation ×{' '}
+              {fmt(a.sessionsPerMonth)} = <strong>{fmt(perSession * a.sessionsPerMonth)} credits / month</strong>, before the
+              M365 Copilot-licensed discount
             </p>
           </fieldset>
         );
       })}
-      <button type="button" onClick={() => setAgents([...agents, blankAgent(agents.length + 1)])}>
-        + Add agent
-      </button>
+      <div>
+        <button type="button" onClick={() => setAgents([...agents, blankAgent(agents.length + 1)])}>
+          + Add agent
+        </button>
+      </div>
     </>
   );
 }
@@ -236,7 +242,7 @@ export function GitHubCopilotFields({ item, onChange, rateCard }: { item: Item<'
         Allow paid usage beyond the included AI credits
       </label>
 
-      <p className="muted small">Model mix (share of sessions; must total 100%):</p>
+      <div className="subhead">Model mix · share of sessions</div>
       {mix.map(([id, share], idx) => (
         <div className="mix-row" key={id}>
           <select
@@ -277,7 +283,7 @@ export function GitHubCopilotFields({ item, onChange, rateCard }: { item: Item<'
       </div>
 
       <details>
-        <summary className="muted">Tokens per session</summary>
+        <summary>Tokens per session</summary>
         <div className="grid">
           <NumberField label="Input tokens (thousands)" value={tk.input} onChange={(v) => set({ tokensKPerSession: { ...tk, input: v ?? 0 } })} />
           <NumberField label="Cached input tokens (thousands)" value={tk.cachedInput} onChange={(v) => set({ tokensKPerSession: { ...tk, cachedInput: v ?? 0 } })} />

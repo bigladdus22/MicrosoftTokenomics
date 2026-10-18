@@ -15,7 +15,7 @@ export function AuthGate({ children }: { children: (session: Session) => ReactNo
     return () => data.subscription.unsubscribe();
   }, []);
 
-  if (session === undefined) return <p className="muted">Loading…</p>;
+  if (session === undefined) return <p className="muted" style={{ padding: 24 }}>Loading…</p>;
   if (session) return <>{children(session)}</>;
   return <SignIn />;
 }
@@ -36,22 +36,34 @@ function SignIn() {
   }
 
   return (
-    <main className="card narrow">
-      <h1>AI Credits Forecast Calculator</h1>
-      <form onSubmit={submit}>
-        <label>
-          Email
-          <input type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />
-        </label>
-        <label>
-          Password
-          <input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-        </label>
-        <button type="submit" className="primary wide" disabled={busy}>
-          {busy ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
-      {message && <p className="error">{message}</p>}
+    <main className="signin">
+      <div className="card">
+        <span className="brand">
+          <i className="brand-mark" aria-hidden="true" />
+          AI Credits Forecast
+        </span>
+        <p className="muted small" style={{ marginTop: 6 }}>
+          Copilot Credits and GitHub AI Credits forecasts
+        </p>
+        <form onSubmit={submit}>
+          <label>
+            Email
+            <input type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          </label>
+          <label>
+            Password
+            <input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+          </label>
+          <button type="submit" className="primary wide" disabled={busy}>
+            {busy ? 'Signing in…' : 'Sign in'}
+          </button>
+          {message && (
+            <p className="error small" role="alert">
+              {message}
+            </p>
+          )}
+        </form>
+      </div>
     </main>
   );
 }
